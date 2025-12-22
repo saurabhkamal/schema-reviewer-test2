@@ -1,0 +1,225 @@
+import axios from 'axios';
+import type {
+  ApiResponse,
+  PaginatedResponse,
+  Database,
+  Table,
+  Issue,
+  Scan,
+  DashboardStats,
+  IssuesOverview,
+  Conversation,
+  Message,
+  SQLGenerationRequest,
+  SQLGeneration,
+  User,
+} from '@/types';
+
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Handle auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth APIs
+export const authApi = {
+  login: async (email: string, password: string): Promise<{ user: User; token: string }> => {
+    const response = await api.post<ApiResponse<{ user: User; token: string }>>('/auth/login', {
+      email,
+      password,
+    });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_token', response.data.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.data.user));
+    }
+    return response.data.data;
+  },
+  register: async (email: string, name: string, password: string, role?: string): Promise<User> => {
+    const response = await api.post<ApiResponse<{ user: User }>>('/auth/register', {
+      email,
+      name,
+      password,
+      role,
+    });
+    return response.data.data.user;
+  },
+  logout: (): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+    }
+  },
+  getCurrentUser: (): User | null => {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('user');
+      return userStr ? JSON.parse(userStr) : null;
+    }
+    return null;
+  },
+  getToken: (): string | null => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auth_token');
+    }
+    return null;
+  },
+};
+
+// Schema APIs (matching backend endpoints)
+export const schemaApi = {
+  ingest: async (data: {
+    databaseName: string;
+    databaseType: 'postgresql' | 'mysql' | 'sqlite' | 'mssql';
+    tables: Array<{
+      name: string;
+      schemaName?: string;
+      rowCount?: number;
+      sizeBytes?: number;
+      sizeFormatted?: string;
+      columns: Array<{
+        name: string;
+        type: string;
+        nullable?: boolean;
+        defaultValue?: string | null;
+        isPrimaryKey?: boolean;
+        isForeignKey?: boolean;
+      }>;
+      indexes: Array<{
+        name: string;
+        columns: string[];
+        unique?: boolean;
+        type?: string;
+      }>;
+      foreignKeys: Array<{
+        name: string;
+        columnName: string;
+        referencedTable: string;
+        referencedColumn: string;
+      }>;
+    }>;
+  }): Promise<{ snapshotId: string; version: number; databaseId: string; createdAt: string }> => {
+    const response = await api.post<ApiResponse<{ snapshotId: string; version: number; databaseId: string; createdAt: string }>>(
+      '/v1/schema/ingest',
+      data
+    );
+    return response.data.data;
+  },
+  getLatest: async (dbName: string): Promise<any> => {
+    const response = await api.get<ApiResponse<any>>(`/v1/schema/${dbName}`);
+    return response.data.data;
+  },
+  getSnapshot: async (snapshotId: string): Promise<any> => {
+    const response = await api.get<ApiResponse<any>>(`/v1/schema/snapshot/${snapshotId}`);
+    return response.data.data;
+  },
+  getAll: async (dbName?: string, page = 1, pageSize = 20): Promise<PaginatedResponse<any>> => {
+    const params: any = { page, pageSize };
+    if (dbName) params.dbName = dbName;
+    const response = await api.get<ApiResponse<{ data: any[]; pagination: any }>>('/v1/schema', { params });
+    // Backend returns { status: 'success', data: [...], pagination: {...} }
+    // So response.data.data is the array, and response.data.pagination is the pagination
+    return {
+      data: response.data.data || [],
+      pagination: response.data.pagination || { total: 0, page: 1, pageSize: 20, totalPages: 0 },
+    };
+  },
+  compare: async (snapshotId1: string, snapshotId2: string): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>('/v1/schema/compare', {
+      snapshotId1,
+      snapshotId2,
+    });
+    return response.data.data;
+  },
+  deleteSnapshot: async (snapshotId: string): Promise<void> => {
+    await api.delete<ApiResponse<void>>(`/v1/schema/snapshot/${snapshotId}`);
+  },
+  deleteAllSnapshots: async (dbName?: string): Promise<{ deletedCount: number }> => {
+    const params = dbName ? { dbName } : {};
+    const response = await api.delete<ApiResponse<{ deletedCount: number }>>('/v1/schema/all', { params });
+    return response.data.data;
+  },
+};
+
+// Impact & Issues APIs
+export const impactApi = {
+  getScore: async (snapshotId: string): Promise<{
+    healthScore: number;
+    totalIssues: number;
+    severityCounts: { CRITICAL: number; HIGH: number; MEDIUM: number; LOW: number };
+    breakdown: { critical: number; high: number; medium: number; low: number };
+  }> => {
+    const response = await api.get<ApiResponse<any>>(`/v1/impact/score/${snapshotId}`);
+    return response.data.data;
+  },
+  getRankedIssues: async (snapshotId: string, limit = 10): Promise<Issue[]> => {
+    const response = await api.get<ApiResponse<Issue[]>>(`/v1/impact/rank/${snapshotId}`, {
+      params: { limit },
+    });
+    return response.data.data;
+  },
+};
+
+// Recommendations APIs
+export const recommendationApi = {
+  generate: async (issueId: string): Promise<any[]> => {
+    const response = await api.post<ApiResponse<any[]>>(`/v1/recommendations/generate/${issueId}`);
+    return response.data.data;
+  },
+  getForIssue: async (issueId: string): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>(`/v1/recommendations/issue/${issueId}`);
+    return response.data.data;
+  },
+  getForSnapshot: async (snapshotId: string): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>(`/v1/recommendations/snapshot/${snapshotId}`);
+    return response.data.data;
+  },
+};
+
+// AI Assistant APIs
+export const assistantApi = {
+  sendMessage: async (message: string, databaseName?: string, conversationId?: string): Promise<Message> => {
+    const response = await api.post<ApiResponse<Message>>('/v1/assistant/message', {
+      message,
+      databaseName,
+      conversationId,
+    });
+    return response.data.data;
+  },
+};
+
+// Health check
+export const healthApi = {
+  check: async (): Promise<{ status: string; database: string; timestamp: string }> => {
+    const response = await api.get('/health');
+    return response.data;
+  },
+};
+
+export default api;
+

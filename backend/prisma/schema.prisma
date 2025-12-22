@@ -1,0 +1,191 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(VIEWER)
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  DEVELOPER
+  VIEWER
+}
+
+model Database {
+  id        String   @id @default(uuid())
+  name      String
+  type      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  snapshots SchemaSnapshot[]
+
+  @@unique([name])
+  @@map("databases")
+}
+
+model SchemaSnapshot {
+  id          String   @id @default(uuid())
+  databaseId  String
+  version     Int      @default(1)
+  snapshotId  String   @unique
+  createdAt   DateTime @default(now())
+
+  database    Database     @relation(fields: [databaseId], references: [id], onDelete: Cascade)
+  tables      Table[]
+  issues      Issue[]
+  recommendations SqlRecommendation[]
+
+  @@index([databaseId, createdAt])
+  @@index([snapshotId])
+  @@map("schema_snapshots")
+}
+
+model Table {
+  id            String   @id @default(uuid())
+  snapshotId    String
+  name          String
+  schemaName    String
+  rowCount      Int?
+  sizeBytes     BigInt?
+  sizeFormatted String?
+
+  snapshot      SchemaSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  columns       Column[]
+  indexes       Index[]
+  foreignKeys   ForeignKey[]
+  issues        Issue[]
+
+  @@unique([snapshotId, schemaName, name])
+  @@index([snapshotId])
+  @@map("tables")
+}
+
+model Column {
+  id            String   @id @default(uuid())
+  tableId       String
+  name          String
+  type          String
+  nullable      Boolean  @default(false)
+  defaultValue  String?
+  isPrimaryKey  Boolean  @default(false)
+  isForeignKey  Boolean  @default(false)
+
+  table         Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, name])
+  @@index([tableId])
+  @@map("columns")
+}
+
+model Index {
+  id        String   @id @default(uuid())
+  tableId   String
+  name      String
+  columns   String[]
+  unique    Boolean  @default(false)
+  type      String?
+
+  table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, name])
+  @@index([tableId])
+  @@map("indexes")
+}
+
+model ForeignKey {
+  id                String   @id @default(uuid())
+  tableId           String
+  name              String
+  columnName        String
+  referencedTable   String
+  referencedColumn  String
+
+  table             Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, name])
+  @@index([tableId])
+  @@map("foreign_keys")
+}
+
+model Issue {
+  id            String       @id @default(uuid())
+  snapshotId    String?
+  tableId       String?
+  severity      IssueSeverity
+  status        IssueStatus  @default(OPEN)
+  category      IssueCategory
+  title         String
+  description   String
+  recommendation String?
+  createdAt     DateTime     @default(now())
+  resolvedAt    DateTime?
+
+  snapshot      SchemaSnapshot? @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  table         Table?         @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  recommendations SqlRecommendation[]
+
+  @@index([snapshotId])
+  @@index([tableId])
+  @@index([severity, status])
+  @@map("issues")
+}
+
+enum IssueSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum IssueStatus {
+  OPEN
+  RESOLVED
+  IGNORED
+}
+
+enum IssueCategory {
+  INDEX
+  NORMALIZATION
+  QUERY_PERFORMANCE
+  FOREIGN_KEYS
+  DATA_TYPES
+  CONSTRAINTS
+}
+
+model SqlRecommendation {
+  id            String   @id @default(uuid())
+  issueId       String?
+  snapshotId    String?
+  sql           String
+  description   String
+  explanation   String?
+  safeToRun     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  issue         Issue?          @relation(fields: [issueId], references: [id], onDelete: SetNull)
+  snapshot      SchemaSnapshot? @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([snapshotId])
+  @@map("sql_recommendations")
+}
+
