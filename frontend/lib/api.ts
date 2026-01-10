@@ -221,5 +221,85 @@ export const healthApi = {
   },
 };
 
+// Analytics APIs
+export interface DatabaseConnection {
+  connectionString?: string;
+  host?: string;
+  port?: number;
+  database?: string;
+  user?: string;
+  password?: string;
+}
+
+export interface AnalyticsSchema {
+  tables: Array<{
+    schema: string;
+    name: string;
+    columnCount: number;
+    columns: Array<{
+      name: string;
+      type: string;
+      nullable: boolean;
+      isDate: boolean;
+      isNumeric: boolean;
+      isText: boolean;
+    }>;
+  }>;
+}
+
+export interface TimeSeriesData {
+  date: string;
+  count: number;
+  total?: number;
+  average?: number;
+}
+
+export interface DistributionData {
+  category: string;
+  count: number;
+}
+
+export interface TopNData {
+  entity: string;
+  count: number;
+  total?: number;
+  average?: number;
+}
+
+export const analyticsApi = {
+  getSchema: async (connection: DatabaseConnection): Promise<AnalyticsSchema> => {
+    const response = await api.post<ApiResponse<AnalyticsSchema>>('/v1/analytics/schema', connection);
+    return response.data.data;
+  },
+  getMetrics: async (connection: DatabaseConnection & { table: string; metricColumn?: string }): Promise<any> => {
+    const response = await api.post<ApiResponse<any>>('/v1/analytics/metrics', connection);
+    return response.data.data;
+  },
+  getTimeSeries: async (
+    connection: DatabaseConnection & {
+      table: string;
+      dateColumn: string;
+      metricColumn?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Promise<TimeSeriesData[]> => {
+    const response = await api.post<ApiResponse<TimeSeriesData[]>>('/v1/analytics/time-series', connection);
+    return response.data.data;
+  },
+  getDistribution: async (
+    connection: DatabaseConnection & { table: string; categoryColumn: string; limit?: number }
+  ): Promise<DistributionData[]> => {
+    const response = await api.post<ApiResponse<DistributionData[]>>('/v1/analytics/distribution', connection);
+    return response.data.data;
+  },
+  getTopN: async (
+    connection: DatabaseConnection & { table: string; column: string; metricColumn?: string; limit?: number }
+  ): Promise<TopNData[]> => {
+    const response = await api.post<ApiResponse<TopNData[]>>('/v1/analytics/top-n', connection);
+    return response.data.data;
+  },
+};
+
 export default api;
 

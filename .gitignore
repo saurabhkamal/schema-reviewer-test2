@@ -1,0 +1,13 @@
+# Local analytics files (never commit)
+ANALYTICS-*
+README-ANALYTICS-DB.md
+analytics_demo.sql
+analytics_demo_schema.json
+
+# Local docker configs
+docker-compose*.yml
+
+# Local setup scripts
+*.ps1
+*.sh
+REMAINING_WORK.md
