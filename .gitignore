@@ -10,3 +10,4 @@ docker-compose*.yml
 # Local setup scripts
 *.ps1
 *.sh
+REMAINING_WORK.md
