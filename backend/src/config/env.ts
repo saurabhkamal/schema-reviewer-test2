@@ -9,14 +9,17 @@ interface EnvConfig {
   databaseUrl: string;
   jwtSecret: string;
   jwtExpiresIn: string;
+  geminiApiKey?: string;
+  geminiModel: string;
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
   const value = process.env[key];
-  if (!value && !defaultValue) {
+  if (value === undefined && defaultValue === undefined) {
     throw new Error(`Environment variable ${key} is required but not set`);
   }
-  return value || defaultValue || '';
+  // Return the value if it exists (even if empty string), otherwise return default
+  return value !== undefined ? value : (defaultValue || '');
 }
 
 function getEnvNumber(key: string, defaultValue?: number): number {
@@ -35,5 +38,7 @@ export const env: EnvConfig = {
   databaseUrl: getEnvVar('DATABASE_URL', 'postgresql://user:password@localhost:5432/schema_intelligence'),
   jwtSecret: getEnvVar('JWT_SECRET', 'your-secret-key-change-in-production'),
   jwtExpiresIn: getEnvVar('JWT_EXPIRES_IN', '7d'),
+  geminiApiKey: getEnvVar('GEMINI_API_KEY', ''),
+  geminiModel: getEnvVar('GEMINI_MODEL', 'gemini-2.5-flash'),
 };
 

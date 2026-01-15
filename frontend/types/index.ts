@@ -138,10 +138,14 @@ export interface IssuesOverview {
 // AI Assistant Types
 export interface Conversation {
   id: string;
+  userId: string;
   title: string;
-  preview: string;
+  preview: string | null;
+  databaseName: string | null;
+  archived: boolean;
   createdAt: string;
   updatedAt: string;
+  messages?: Message[];
 }
 
 export interface Message {
@@ -151,6 +155,7 @@ export interface Message {
   content: string;
   createdAt: string;
   sqlCode?: string;
+  sqlSuggestions?: string[];
   recommendations?: string[];
 }
 

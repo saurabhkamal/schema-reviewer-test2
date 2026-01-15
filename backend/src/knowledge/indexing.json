@@ -1,0 +1,29 @@
+{
+  "topic": "Indexing Strategies",
+  "principles": [
+    "Always index foreign key columns used in JOIN operations to improve join performance",
+    "Create composite indexes for common multi-column WHERE and ORDER BY patterns",
+    "Avoid creating many overlapping indexes that hurt write performance",
+    "Consider covering indexes (include non-key columns) to reduce random I/O on large tables",
+    "Prefer selective columns for indexes; low-selectivity columns (e.g., boolean flags) often don't help",
+    "Index columns used in WHERE clauses, especially those with high selectivity",
+    "Index columns used in ORDER BY and GROUP BY clauses when combined with WHERE filters",
+    "Use partial indexes for filtered queries (e.g., WHERE status = 'active')",
+    "Consider BRIN indexes for large tables with naturally ordered data (timestamps, auto-increment IDs)",
+    "Monitor index usage and remove unused indexes to improve write performance"
+  ],
+  "antiPatterns": [
+    "Full table scans on very large tables without any index usage",
+    "Indexes on columns that are never used in filters, joins, or sorts",
+    "Multiple indexes with the same leading column but slightly different tails without clear need",
+    "Indexing every column in a table (over-indexing)",
+    "Creating indexes on low-cardinality columns (e.g., gender, status with few values) without justification"
+  ],
+  "bestPractices": [
+    "Analyze query patterns before creating indexes",
+    "Use EXPLAIN ANALYZE to verify index usage",
+    "Consider index maintenance overhead (INSERT/UPDATE/DELETE performance)",
+    "Use unique indexes to enforce data integrity",
+    "Consider index-only scans when possible (covering indexes)"
+  ]
+}

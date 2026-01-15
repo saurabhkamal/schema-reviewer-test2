@@ -1,0 +1,27 @@
+{
+  "topic": "Data Type Selection",
+  "principles": [
+    "Choose the smallest data type that can hold all possible values",
+    "Use appropriate numeric types (SMALLINT, INTEGER, BIGINT) based on value range",
+    "Use VARCHAR with appropriate length limits instead of TEXT when length is known",
+    "Use TIMESTAMP WITH TIME ZONE for timezone-aware timestamps",
+    "Use BOOLEAN instead of INTEGER for true/false values",
+    "Use ENUM types for fixed sets of values (but consider maintenance overhead)",
+    "Use JSON/JSONB for semi-structured data when appropriate",
+    "Consider storage and performance implications of data type choices"
+  ],
+  "commonMistakes": [
+    "Using VARCHAR(255) for all text fields without considering actual needs",
+    "Using INTEGER for boolean values (use BOOLEAN)",
+    "Using TEXT for all string fields (use VARCHAR with appropriate length)",
+    "Not considering timezone requirements for timestamp fields",
+    "Using FLOAT/DOUBLE for monetary values (use NUMERIC/DECIMAL)",
+    "Using overly large numeric types when smaller ones would suffice"
+  ],
+  "performanceImpact": [
+    "Smaller data types reduce storage and improve cache efficiency",
+    "Appropriate data types enable better index usage",
+    "Correct data types prevent implicit casting in queries",
+    "Proper types improve query planning and execution"
+  ]
+}
