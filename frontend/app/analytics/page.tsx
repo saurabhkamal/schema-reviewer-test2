@@ -393,14 +393,18 @@ export default function AnalyticsPage() {
                       <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                           <Pie
-                            data={distribution}
+                            data={distribution as any}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            label={({ category, percent }) => `${category}: ${(percent * 100).toFixed(0)}%`}
+                            label={(entry: any) => {
+                              const percent = entry.percent;
+                              return `${entry.category || entry.name}: ${percent ? (percent * 100).toFixed(0) : 0}%`;
+                            }}
                             outerRadius={80}
                             fill="#8884d8"
                             dataKey="count"
+                            nameKey="category"
                           >
                             {distribution.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
