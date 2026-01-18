@@ -15,7 +15,6 @@ import {
   faRobot,
   faWandMagicSparkles,
   faCodeCompare,
-  faTerminal,
   faChartLine,
   faSliders,
 } from '@fortawesome/free-solid-svg-icons';
@@ -35,7 +34,6 @@ const navItems: NavItem[] = [
   { id: 'ai-assistant', label: 'AI Assistant', icon: 'robot', href: '/ai-assistant' },
   { id: 'sql-generator', label: 'SQL Generator', icon: 'wand-magic-sparkles', href: '/sql-generator' },
   { id: 'compare', label: 'Compare', icon: 'code-compare', href: '/compare' },
-  { id: 'cicd', label: 'CI/CD', icon: 'terminal', href: '/cicd' },
   { id: 'analytics', label: 'Analytics', icon: 'chart-line', href: '/analytics' },
   { id: 'settings', label: 'Settings', icon: 'sliders', href: '/settings' },
 ];
@@ -50,7 +48,6 @@ const iconMap: Record<string, IconDefinition> = {
   'robot': faRobot,
   'wand-magic-sparkles': faWandMagicSparkles,
   'code-compare': faCodeCompare,
-  'terminal': faTerminal,
   'chart-line': faChartLine,
   'sliders': faSliders,
 };
