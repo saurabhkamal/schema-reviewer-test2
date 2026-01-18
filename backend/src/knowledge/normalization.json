@@ -1,0 +1,23 @@
+{
+  "topic": "Database Normalization",
+  "rules": [
+    "Use 3NF (Third Normal Form) to avoid redundant data and update anomalies",
+    "Move repeated groups of attributes into separate tables with foreign keys",
+    "Ensure each table has a clear primary key and represents a single entity or relationship",
+    "Avoid storing calculated values unless they're expensive to compute",
+    "Separate frequently accessed columns from rarely accessed ones when appropriate",
+    "Use junction tables for many-to-many relationships"
+  ],
+  "benefits": [
+    "Reduces data redundancy",
+    "Prevents update anomalies",
+    "Improves data integrity",
+    "Makes schema more maintainable"
+  ],
+  "whenToDenormalize": [
+    "When read performance is critical and writes are infrequent",
+    "When calculated values are expensive to compute on-the-fly",
+    "When denormalization significantly improves query performance",
+    "Always document the reason for denormalization"
+  ]
+}

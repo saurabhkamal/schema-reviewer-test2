@@ -20,6 +20,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 120000, // 120 seconds timeout for LLM requests
 });
 
 // Add auth token to requests
@@ -33,7 +34,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors
+// Handle auth errors and network errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -44,6 +45,16 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    
+    // Enhance network error messages
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      error.message = 'Request timed out. The server may be processing a large request. Please try again.';
+    } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+      error.message = 'Cannot connect to the server. Please ensure the backend is running on http://localhost:3001';
+    } else if (!error.response) {
+      error.message = 'Network error: Unable to reach the server. Please check if the backend is running.';
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -210,6 +221,42 @@ export const assistantApi = {
       conversationId,
     });
     return response.data.data;
+  },
+};
+
+// Conversation APIs
+export const conversationApi = {
+  list: async (options?: {
+    archived?: boolean;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ conversations: Conversation[]; total: number }> => {
+    const response = await api.get<ApiResponse<{ conversations: Conversation[]; total: number }>>(
+      '/v1/conversations',
+      { params: options }
+    );
+    return response.data.data;
+  },
+  get: async (id: string): Promise<Conversation> => {
+    const response = await api.get<ApiResponse<Conversation>>(`/v1/conversations/${id}`);
+    return response.data.data;
+  },
+  create: async (data?: { title?: string; databaseName?: string }): Promise<Conversation> => {
+    const response = await api.post<ApiResponse<Conversation>>('/v1/conversations', data || {});
+    return response.data.data;
+  },
+  updateTitle: async (id: string, title: string): Promise<void> => {
+    await api.patch<ApiResponse<void>>(`/v1/conversations/${id}/title`, { title });
+  },
+  archive: async (id: string, archived: boolean): Promise<void> => {
+    await api.patch<ApiResponse<void>>(`/v1/conversations/${id}/archive`, { archived });
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete<ApiResponse<void>>(`/v1/conversations/${id}`);
+  },
+  deleteMultiple: async (conversationIds: string[]): Promise<void> => {
+    await api.delete<ApiResponse<void>>('/v1/conversations', { data: { conversationIds } });
   },
 };
 

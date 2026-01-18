@@ -1,0 +1,24 @@
+{
+  "topic": "Foreign Keys and Relationships",
+  "principles": [
+    "Always index foreign key columns to improve JOIN performance",
+    "Use appropriate CASCADE rules (ON DELETE, ON UPDATE) based on business logic",
+    "Ensure referential integrity with foreign key constraints",
+    "Consider the impact of CASCADE operations on performance",
+    "Use DEFERRABLE constraints when needed for complex transactions",
+    "Document relationship cardinality (one-to-one, one-to-many, many-to-many)"
+  ],
+  "bestPractices": [
+    "Index all foreign key columns",
+    "Use meaningful foreign key names that indicate the relationship",
+    "Consider using composite foreign keys when appropriate",
+    "Validate foreign key constraints match business rules",
+    "Monitor foreign key constraint violations for data quality issues"
+  ],
+  "performanceConsiderations": [
+    "Foreign key checks add overhead to INSERT/UPDATE/DELETE operations",
+    "Missing indexes on foreign keys cause full table scans on JOINs",
+    "CASCADE operations can be expensive; use carefully",
+    "Consider DEFERRABLE constraints for bulk operations"
+  ]
+}

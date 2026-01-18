@@ -1,0 +1,41 @@
+-- CreateEnum
+CREATE TYPE "MessageRole" AS ENUM ('USER', 'ASSISTANT');
+
+-- CreateTable
+CREATE TABLE "conversations" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "preview" TEXT,
+    "databaseName" TEXT,
+    "archived" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "conversations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "messages" (
+    "id" TEXT NOT NULL,
+    "conversationId" TEXT NOT NULL,
+    "role" "MessageRole" NOT NULL,
+    "content" TEXT NOT NULL,
+    "sqlSuggestions" TEXT[],
+    "recommendations" TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "messages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "conversations_userId_archived_updatedAt_idx" ON "conversations"("userId", "archived", "updatedAt");
+
+-- CreateIndex
+CREATE INDEX "conversations_userId_createdAt_idx" ON "conversations"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "messages_conversationId_createdAt_idx" ON "messages"("conversationId", "createdAt");
+
+-- AddForeignKey
+ALTER TABLE "messages" ADD CONSTRAINT "messages_conversationId_fkey" FOREIGN KEY ("conversationId") REFERENCES "conversations"("id") ON DELETE CASCADE ON UPDATE CASCADE;

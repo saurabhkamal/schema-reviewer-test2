@@ -1,0 +1,30 @@
+{
+  "topic": "Query Design Patterns",
+  "principles": [
+    "Use parameterized queries to prevent SQL injection",
+    "Avoid SELECT * in production queries; specify only needed columns",
+    "Use appropriate JOIN types (INNER, LEFT, RIGHT) based on data requirements",
+    "Limit result sets when possible (LIMIT clause)",
+    "Use EXISTS instead of IN for subqueries when checking existence",
+    "Avoid correlated subqueries when a JOIN would be more efficient",
+    "Use UNION ALL instead of UNION when duplicates don't need to be removed",
+    "Consider using window functions for complex aggregations",
+    "Use CTEs (Common Table Expressions) for complex queries to improve readability",
+    "Optimize ORDER BY by ensuring indexed columns are used"
+  ],
+  "performanceTips": [
+    "Filter early in the query (WHERE before JOINs when possible)",
+    "Use appropriate data types to reduce storage and improve performance",
+    "Avoid functions on indexed columns in WHERE clauses (prevents index usage)",
+    "Use EXPLAIN ANALYZE to identify slow query parts",
+    "Consider materialized views for expensive aggregations",
+    "Use connection pooling to reduce connection overhead"
+  ],
+  "commonMistakes": [
+    "Using LIKE '%pattern%' (prevents index usage; use LIKE 'pattern%' or full-text search)",
+    "Comparing different data types (causes implicit casting and prevents index usage)",
+    "Using OR conditions that prevent index usage (consider UNION)",
+    "N+1 query problems (fetch related data in one query with JOINs)",
+    "Not using prepared statements for repeated queries"
+  ]
+}
