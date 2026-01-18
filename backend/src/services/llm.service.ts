@@ -99,6 +99,7 @@ function getLangChainModel() {
       modelName: process.env.OPENAI_MODEL || 'gpt-4',
       temperature: 0.3,
       maxTokens: 2000,
+      timeout: 60000, // 60 seconds timeout
     });
   } else if (env.geminiApiKey && env.geminiApiKey.trim().length > 0) {
     return new ChatGoogleGenerativeAI({
@@ -215,7 +216,21 @@ CRITICAL: Start with a direct answer. Avoid verbose responses like "Good news!" 
       new HumanMessage(userPrompt),
     ];
 
-    const response = await model.invoke(messages);
+    logger.info('Calling LLM API', {
+      modelName: env.geminiApiKey ? env.geminiModel : (process.env.OPENAI_MODEL || 'gpt-4'),
+      hasApiKey: !!(env.geminiApiKey || process.env.OPENAI_API_KEY),
+      messageLength: message.length,
+    });
+
+    // Add timeout wrapper for the API call (60 seconds)
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout: The AI API call took longer than 60 seconds')), 60000);
+    });
+
+    const response = await Promise.race([
+      model.invoke(messages),
+      timeoutPromise,
+    ]);
     const responseText = response.content as string;
 
     // Parse the response
