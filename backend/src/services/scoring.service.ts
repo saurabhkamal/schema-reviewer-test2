@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { logger } from '../utils/logger';
 import type { IssueSeverity, IssueCategory } from '@prisma/client';
+import { predictIndexImprovement, calculateFeatures } from './ml-prediction.service';
 
 interface ScoringRule {
   name: string;
@@ -148,15 +149,51 @@ export const analyzeSchema = async (snapshotId: string) => {
   for (const table of snapshot.tables) {
     for (const rule of scoringRules) {
       if (rule.check(table)) {
+        // For index-related issues, predict performance improvement using ML
+        let predictedImprovement: number | null = null;
+        
+        if (rule.category === 'INDEX' || rule.category === 'FOREIGN_KEYS') {
+          try {
+            const tableRowCount = table.rowCount || 0;
+            
+            // Calculate features for ML prediction
+            const features = calculateFeatures(tableRowCount, {
+              // Estimate join depth: foreign keys typically involve 2 tables, large tables may have more
+              joinDepth: table.foreignKeys && table.foreignKeys.length > 0 ? 2 : 1,
+            });
+            
+            // Get ML prediction
+            const prediction = await predictIndexImprovement(features);
+            predictedImprovement = prediction.predictedImprovement;
+            
+            logger.info('ML prediction for index issue', {
+              tableName: table.name,
+              predictedImprovement,
+              modelUsed: prediction.modelUsed,
+            });
+          } catch (error) {
+            logger.warn('Failed to get ML prediction for index issue', {
+              error: error instanceof Error ? error.message : String(error),
+              tableName: table.name,
+            });
+            // Continue without prediction if ML fails
+          }
+        }
+        
         const issue = await prisma.issue.create({
           data: {
-            snapshotId: snapshot.id,
-            tableId: table.id,
+            snapshot: {
+              connect: { id: snapshot.id },
+            },
+            table: {
+              connect: { id: table.id },
+            },
             severity: rule.severity,
             category: rule.category,
             title: rule.name,
             description: rule.description(table),
             recommendation: rule.recommendation(table),
+            predictedImprovement: predictedImprovement,
           },
         });
         issues.push(issue);

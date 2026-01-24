@@ -80,6 +80,7 @@ export interface Issue {
   resolvedAt?: string;
   recommendation?: string;
   sqlFix?: string;
+  predictedImprovement?: number | null;  // ML-predicted performance improvement percentage (0-100)
 }
 
 // Scan Types

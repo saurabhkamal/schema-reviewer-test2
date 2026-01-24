@@ -9,6 +9,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faDownload,
   faCheckDouble,
+  faChartLine,
+  faSparkles,
 } from '@fortawesome/free-solid-svg-icons';
 import { useApp } from '@/contexts/AppContext';
 import { schemaApi, impactApi } from '@/lib/api';
@@ -19,6 +21,7 @@ export default function IssuesPage() {
   const router = useRouter();
   const { selectedDatabaseId, databases } = useApp();
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'severity' | 'improvement'>('severity');
 
   const { data: snapshots, isLoading: snapshotsLoading } = useQuery({
     queryKey: ['snapshots', selectedDatabaseId],
@@ -40,14 +43,28 @@ export default function IssuesPage() {
     enabled: !!snapshotId,
   });
 
-  const filteredIssues = issues?.filter((issue) => {
+  const filteredIssues = (issues?.filter((issue) => {
     if (selectedSeverity !== 'all') {
       const issueSeverity = String(issue.severity).toUpperCase();
       const selectedSeverityUpper = selectedSeverity.toUpperCase();
       if (issueSeverity !== selectedSeverityUpper) return false;
     }
     return true;
-  }) || [];
+  }) || []).sort((a, b) => {
+    if (sortBy === 'improvement') {
+      // Sort by predicted improvement (highest first), then by severity
+      const aImprovement = a.predictedImprovement ?? -1;
+      const bImprovement = b.predictedImprovement ?? -1;
+      if (bImprovement !== aImprovement) {
+        return bImprovement - aImprovement;
+      }
+    }
+    // Default: sort by severity (CRITICAL > HIGH > MEDIUM > LOW)
+    const severityOrder = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+    const aIndex = severityOrder.indexOf(String(a.severity).toUpperCase());
+    const bIndex = severityOrder.indexOf(String(b.severity).toUpperCase());
+    return aIndex - bIndex;
+  });
 
   const severityCounts = {
     critical: issues?.filter((i) => String(i.severity).toUpperCase() === 'CRITICAL').length || 0,
@@ -93,14 +110,17 @@ export default function IssuesPage() {
                   onClick={() => {
                     if (issues && issues.length > 0) {
                       const csv = [
-                        ['Severity', 'Category', 'Title', 'Description', 'Table', 'Column'].join(','),
+                        ['Severity', 'Category', 'Title', 'Description', 'Table', 'Column', 'Predicted Improvement %'].join(','),
                         ...issues.map(i => [
                           i.severity,
                           i.category,
                           `"${i.title}"`,
                           `"${i.description}"`,
                           i.tableName || '',
-                          i.columnName || ''
+                          i.columnName || '',
+                          i.predictedImprovement !== null && i.predictedImprovement !== undefined 
+                            ? i.predictedImprovement.toFixed(2) 
+                            : ''
                         ].join(','))
                       ].join('\n');
                       const blob = new Blob([csv], { type: 'text/csv' });
@@ -151,6 +171,33 @@ export default function IssuesPage() {
                     ))}
                   </div>
                 </div>
+                {/* Sort Option */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-body-sm text-text-secondary font-medium">Sort by:</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSortBy('severity')}
+                      className={`px-3 py-1 text-sm rounded-md ${
+                        sortBy === 'severity'
+                          ? 'bg-primary text-white'
+                          : 'bg-surface-light text-text-secondary hover:bg-border'
+                      }`}
+                    >
+                      Severity
+                    </button>
+                    <button
+                      onClick={() => setSortBy('improvement')}
+                      className={`px-3 py-1 text-sm rounded-md flex items-center gap-1 ${
+                        sortBy === 'improvement'
+                          ? 'bg-primary text-white'
+                          : 'bg-surface-light text-text-secondary hover:bg-border'
+                      }`}
+                    >
+                      <FontAwesomeIcon icon={faChartLine} className="text-xs" />
+                      Improvement
+                    </button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -192,6 +239,29 @@ export default function IssuesPage() {
                             <div className="bg-surface-light p-3 rounded-md mb-3">
                               <p className="text-body-sm text-text-primary font-medium mb-1">Recommendation:</p>
                               <p className="text-body-sm text-text-secondary">{issue.recommendation}</p>
+                            </div>
+                          )}
+                          {/* ML Prediction Display */}
+                          {issue.predictedImprovement !== null && issue.predictedImprovement !== undefined && 
+                           (issue.category === 'INDEX' || issue.category === 'FOREIGN_KEYS') && (
+                            <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 p-3 rounded-md mb-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <FontAwesomeIcon icon={faSparkles} className="text-primary" />
+                                <p className="text-body-sm text-text-primary font-semibold">
+                                  Expected Performance Improvement
+                                </p>
+                              </div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-h3 font-bold text-primary">
+                                  {issue.predictedImprovement.toFixed(1)}%
+                                </span>
+                                <span className="text-body-sm text-text-secondary">
+                                  predicted improvement from adding this index
+                                </span>
+                              </div>
+                              <p className="text-caption text-text-muted mt-1">
+                                Powered by ML model (LightGBM)
+                              </p>
                             </div>
                           )}
                           <div className="flex items-center gap-3">

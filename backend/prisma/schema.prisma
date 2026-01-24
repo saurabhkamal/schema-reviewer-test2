@@ -136,6 +136,7 @@ model Issue {
   title         String
   description   String
   recommendation String?
+  predictedImprovement Float?  @map("predictedImprovement")  // ML-predicted performance improvement percentage (0-100)
   createdAt     DateTime     @default(now())
   resolvedAt    DateTime?
 

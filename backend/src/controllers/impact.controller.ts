@@ -39,6 +39,7 @@ export const getRankedIssuesController = async (req: AuthRequest, res: Response)
       recommendation: issue.recommendation,
       tableName: issue.table?.name,
       createdAt: issue.createdAt,
+      predictedImprovement: issue.predictedImprovement,
     })),
   });
 };

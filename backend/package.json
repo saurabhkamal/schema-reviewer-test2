@@ -10,7 +10,9 @@
     "type-check": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "ml:generate-data": "python scripts/ml/generate_synthetic_data.py",
+    "ml:train": "python scripts/ml/train_model.py"
   },
   "keywords": [],
   "author": "",
