@@ -4856,7 +4856,7 @@
           "defaultValue": "'pending'::enum_users_status",
           "isPrimaryKey": false,
           "isForeignKey": false
-        }
+        },
         {
           "name": "displayName",
           "type": "character varying(255)",
