@@ -4856,6 +4856,14 @@
           "defaultValue": "'pending'::enum_users_status",
           "isPrimaryKey": false,
           "isForeignKey": false
+        },
+        {
+          "name": "displayName",
+          "type": "character varying(255)",
+          "nullable": true,
+          "defaultValue": null,
+          "isPrimaryKey": false,
+          "isForeignKey": false
         }
       ],
       "indexes": [
