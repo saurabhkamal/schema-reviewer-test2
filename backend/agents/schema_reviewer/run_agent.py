@@ -81,8 +81,7 @@ def run(
    - The current health score and whether it improved or worsened.
    - Top 3–5 actionable items (from impact issues or from the diff), with clear recommendations.
    - Any breaking or risky changes (e.g. dropped columns, type changes) if present.
-4. Use the Post PR Comment tool to post that review on the pull request (owner={pr_owner}, repo={pr_repo}, pull_number={pr_number}, body=your markdown review).
-
+4. You MUST call the "Post PR Comment" tool. Use owner={pr_owner}, repo={pr_repo}, pull_number={pr_number}, and body=your full markdown review. Do not finish the task without calling this tool. Returning only the markdown without posting is not allowed.
 Return the exact markdown body you posted as your final answer.""",
         expected_output="The markdown review comment that was posted on the PR.",
         agent=reviewer,
